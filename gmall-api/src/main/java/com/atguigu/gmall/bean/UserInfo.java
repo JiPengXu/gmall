@@ -1,34 +1,34 @@
-package com.atguigu.gmall.user.bean;
+package com.atguigu.gmall.bean;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Id;
+import javax.persistence.Transient;
 import java.io.Serializable;
 
 /**
  * @param
  * @return
  */
-@Table(name="user_info")
-public class UserInfo implements Serializable {
-    @Id
-    @Column
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private String id;
-    @Column
-    private String loginName;
-    @Column
-    private String nickName;
-    @Column
-    private String passwd;
-    @Column
-    private String name;
-    @Column
-    private String phoneNum;
-    @Column
-    private String email;
-    @Column
-    private String headImg;
-    @Column
-    private String userLevel;
+   public class UserInfo implements Serializable {
+        @Id
+        @Column
+        private String id;
+        @Column
+        private String loginName;
+        @Column
+        private String nickName;
+        @Column
+        private String passwd;
+        @Column
+        private String name;
+        @Column
+        private String phoneNum;
+        @Column
+        private String email;
+        @Column
+        private String headImg;
+        @Column
+        private String userLevel;
 
     public String getId() {
         return id;
