@@ -1,10 +1,12 @@
 package com.atguigu.gmall.user.service.impl;
 
-import com.atguigu.gmall.service.UserService;
+import com.alibaba.dubbo.config.annotation.Service;
+import com.atguigu.gmall.bean.UserAddress;
 import com.atguigu.gmall.bean.UserInfo;
+import com.atguigu.gmall.service.UserService;
 import com.atguigu.gmall.user.mapper.UserMapper;
+import com.atguigu.gmall.user.mapper.UserAddressMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 
@@ -12,6 +14,8 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
     @Autowired
     private UserMapper userMapper;
+    @Autowired
+    private UserAddressMapper userAddressMapper;
 
     @Override
     public List<UserInfo> userList() {
@@ -27,6 +31,14 @@ public class UserServiceImpl implements UserService {
         System.out.println(userInfo.getId());
 
     }
+    public List<UserAddress> getUserAddress(String userId){
+        UserAddress userAddress =new UserAddress();
+        userAddress.setUserId(userId);
+        List<UserAddress> select = userAddressMapper.getSelect(userId);
+        return  select;
+    }
+
+
 
 
 }
