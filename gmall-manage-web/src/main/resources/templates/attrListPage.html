@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<table id="dg" class="easyui-datagrid" title="属性列表"
+       data-options="singleSelect:true ,method:'get',toolbar:'#tb'">
+    <thead>
+    <tr>
+        <th data-options="field:'id'" width="20%">属性id</th>
+        <th data-options="field:'attrName'" width="80%">属性名</th>
+    </tr>
+    </thead>
+</table>
+<div id="tb" style="padding:5px;height:auto">
+    <div style="margin-bottom:5px">
+        <a href="#" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="addAttrInfo()">添加</a>
+        <a href="#" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="editAttrInfo()">编辑</a>
+        <a href="#" class="easyui-linkbutton" iconCls="icon-remove" plain="true">删除</a>
+    </div>
+    <div>
+        一级分类：
+        <select id="ctg1ForAttrList" name="ctg1ForAttrList" class="easyui-combobox" style="width:100px" data-options="valueField:'id',textField:'name',url:'getCatalog1',onSelect:function(rec){
+              $('#ctg2ForAttrList').combobox('clear');
+              $('#ctg3ForAttrList').combobox('clear');
+
+             $('#ctg2ForAttrList').combobox('reload','getCatalog2?catalog1Id='+rec.id);
+       }"
+        ></select>
+        二级分类：
+        <select name="ctg2ForAttrList" id="ctg2ForAttrList" class="easyui-combobox" style="width:100px" data-options="valueField:'id',textField:'name',
+            onSelect:function(rec){
+            $('#ctg3ForAttrList').combobox('clear');
+            $('#ctg3ForAttrList').combobox('reload','getCatalog3?catalog2Id='+rec.id);
+       }
+"></select>
+        三级分类：
+        <select name="ctg3ForAttrList" id="ctg3ForAttrList" class="easyui-combobox" style="width:100px"
+                data-options="valueField:'id',textField:'name'"></select>
+        <a href="#" class="easyui-linkbutton" iconCls="icon-search" onclick="javascript:reloadAttrList()">刷新属性列表</a>
+    </div>
+</div>
+<div buttons="#bb" id="dlg" class="easyui-dialog" title="编辑属性" data-options="iconCls:'icon-save',closed:true"
+     style="width:600px;height:500px;">
+    <form id="attrForm">
+        <br/>
+        <label>属性名称:</label>
+        <input id="attrName" name="attrName" class="easyui-textbox" data-options="" style="width:100px"/>
+        <input id="attrId" name="attrId" type="hidden"/>
+        <br/><br/>
+        <table id="dg_av" class="easyui-datagrid" title="属性值列表"></table>
+    </form>
+
+</div>
+<div id="bb">
+    <a href="#" class="easyui-linkbutton" onclick="saveAttr()">保存</a>
+    <a href="#" class="easyui-linkbutton" onclick="closeAttr()">关闭</a>
+</div>
+<script type="text/javascript">
+    //当点击保存按钮时我们需要获取到数据 属性是单条数据 属性值是多条
+    // 所以属性值需要集合来获取 数据库保存数据的时候需要往两个表里面保存数据
+    //还需要获取分类3的id保存属性的时候要和分类的商品对应起来 获取分类3的id  因为分类3是下拉列表 所以用combobox这个值来获取
+    function closeAttr() {
+        $('#dlg').dialog('close');
+    }
+
+    function saveAttr() {
+        var attrName=$("#attrName").val();
+        //alert(attrName);
+        if (attrName!=""){
+            var json = {};
+            var dg_av = $("#dg_av").datagrid('getRows');
+            for (i = 0; i < dg_av.length; i++) {
+                json["attrValueList[" + i + "].valueName"] = dg_av[i].valueName;
+            }
+            json["attrName"] = $("#attrName").val();
+            json["catalog3Id"] = $("#ctg3ForAttrList").combobox('getValue');
+            json["id"] = $("#attrId").val();
+            $.post("saveAttr", json, function (data) {
+                $('#dlg').dialog('close');
+                $("#dg").dialog('reload');
+
+            });
+
+        }else {
+            alert("请输入");
+        }
+    }
+
+    function editAttrInfo() {
+        //因为这个是编辑 所以先加载数据  因为编辑是对某个属性进行修改 所以要获取选中的哪一行
+        //进入页面先加载数据
+        //getSelected返回第一个被选中的行或如果没有选中的行则返回null。
+        //把属性id传回去进行查询这个属性有那些属性值
+        var attrInfoRow = $("#dg").datagrid('getSelected');
+        //这个异步查询就是把选中的属性值id传回去把对应的属性值传回来在表单上回显
+        $('#dg_av').datagrid({url: 'getAttrValueList?attrId=' + attrInfoRow.id});
+        //把选中的行的id添加到隐藏域中
+        $("#attrId").val(attrInfoRow.id);
+        //把选中的这一行进行在修改页面进行回显
+        $("#attrName").textbox('setValue', attrInfoRow.attrName);
+        var catalog3Id = $("#ctg3ForAttrList").combobox("getValue");
+        if (catalog3Id) {
+            //如果选择三级分类了就弹出弹窗 在这个弹窗里还有保存和关闭按钮需要添加两个button
+            //用隐藏域来存放id
+            $("#dlg").dialog("open");
+
+        } else {
+            alert("请先选择三级分类");
+
+        }
+        datagrid = $("#dg_av").datagrid({
+            columns: [[
+                {field: 'id', title: '编号', width: '20%'},
+                {
+                    field: 'valueName', title: '属性值名称', width: '80%', editor: {
+                    type: 'validatebox', options: {required: true}  //这一项是必填项
+                }
+                },
+
+            ]],
+            toolbar: [{
+                iconCls: 'icon-edit',
+                text: "修改",
+                handler: function () {//增加的函数是当前的数据表单添加一行 添加的字段是id 和valueName
+                    datagrid.datagrid('appendRow', {
+                        id: '', valueName: ''
+                    });
+                }
+            }, '-', {
+                iconCls: 'icon-remove',
+                text: "删除",
+                handler: function () {//对当前的表单进行删除一行 删除的时候需要知道哪一行的id 所以需要先获取选中一行的id
+                    var d = datagrid.datagrid('getSelected');
+                    var rowIndex = datagrid.datagrid('getRowIndex', d);
+                    datagrid.datagrid('deleteRow', rowIndex);
+
+                }
+            }],
+            //当添加一行以后是不能进行编辑的 我们需要 双击可以进行编辑
+            onDblClickRow: function (rowIndex, rowData) {
+                //双击开启编辑行
+                datagrid.datagrid('beginEdit', rowIndex);
+                //设定当失去焦点时,退出编辑状态
+                var valueName = rowData.valueName;
+                $("input.datagrid-editable-input").val(valueName).bind('blur', function (evt) {
+                    datagrid.datagrid('endEdit', rowIndex);
+                });
+            }
+
+
+        });
+
+    }
+
+
+    //点击增加后弹出弹框
+
+
+    function addAttrInfo() {
+        var catalog3Id = $("#ctg3ForAttrList").combobox("getValue");
+        $("#attrId").val("");
+        $("#attrName").textbox('clear');
+        $('#dg_av').datagrid({url: ''});
+        //var a="";
+        $('#dg_av').datagrid('loadData',{total:0,row});
+        //$('#dg_av').datagrid("reload");
+        if (catalog3Id) {
+            //如果选择三级分类了就弹出弹窗 在这个弹窗里还有保存和关闭按钮需要添加两个button
+            //用隐藏域来存放id
+            $("#dlg").dialog("open");
+
+        } else {
+            alert("请先选择三级分类");
+
+        }
+
+
+        datagrid = $("#dg_av").datagrid({
+            columns: [[
+                {field: 'id', title: '编号', width: '20%'},
+                {
+                    field: 'valueName', title: '属性值名称', width: '80%', editor: {
+                    type: 'validatebox', options: {required: true}  //这一项是必填项
+                }
+                },
+
+            ]],
+            toolbar: [{
+                iconCls: 'icon-add',
+                text: "添加",
+                handler: function () {//增加的函数是当前的数据表单添加一行 添加的字段是id 和valueName
+                    datagrid.datagrid('appendRow', {
+                        id: '', valueName: ''
+                    });
+                }
+            }, '-', {
+                iconCls: 'icon-remove',
+                text: "删除",
+                handler: function () {//对当前的表单进行删除一行 删除的时候需要知道哪一行的id 所以需要先获取选中一行的id
+                    var d = datagrid.datagrid('getSelected');
+                    var rowIndex = datagrid.datagrid('getRowIndex', d);
+                    datagrid.datagrid('deleteRow', rowIndex);
+
+                }
+            }],
+            //当添加一行以后是不能进行编辑的 我们需要 双击可以进行编辑
+            onDblClickRow: function (rowIndex, rowData) {
+                //双击开启编辑行
+                datagrid.datagrid('beginEdit', rowIndex);
+                //设定当失去焦点时,退出编辑状态
+                var valueName = rowData.valueName;
+                $("input.datagrid-editable-input").val(valueName).bind('blur', function (evt) {
+                    datagrid.datagrid('endEdit', rowIndex);
+                });
+            }
+
+
+        });
+
+    }
+
+    //当加载数据列表里的数据时候一级分类直接给异步查询出来 当选择了一级分类以后 把一级分类的id传过去把二级分类查询出来同理二级分类选择以后把三级分类给查询出来
+
+    function reloadAttrList() {
+        //刷新属性列表需要获取三级分类的id
+        var catalog3Id = $("#ctg3ForAttrList").combobox("getValue");
+        //alert(catalog3Id);
+        //把数据加载到table这个标签中
+
+        $('#dg').datagrid({url: 'getAttrList?catalog3Id=' + catalog3Id});
+
+
+    }
+</script>
+
+</body>
+</html>

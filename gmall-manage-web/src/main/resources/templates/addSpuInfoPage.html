@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<!-----------------弹出框----------------------------->
+<div id="spu_dlg" class="easyui-dialog" title="编辑spu" style="width:700px;height:520px;"
+     closed="true" data-options="iconCls:'icon-save',resizable:true,modal:false" buttons="#spuBtns">
+    <form id="spuForm">
+        <br/>
+        <label>spu名称:</label>
+        <input id="spuName" name="spuName" class="easyui-textbox" data-options="" style="width:300px;"/>
+        <br/><br/>
+        <label>spu描述:</label>
+        <input id="description" name="description" class="easyui-textbox" data-options="multiline:true"
+               style="width:500px;height:100px"/>
+
+        <input id="spuId" name="spuId" type="hidden"/>
+        <br/><br/>
+
+        <!----------------商品图片列表 ----------------------->
+
+        <table id="spuImgDg" class="easyui-datagrid" title="商品图片列表"
+               data-options="singleSelect:true,method:'get',toolbar:'#spuImgTootbar'"></table>
+
+        <!----------------图片列表工具栏----------------------->
+        <div id="spuImgTootbar" style="padding:5px;height:auto">
+            <div style="margin-bottom:5px">
+                <a href="#" id="spuImgAdd" class="easyui-linkbutton" iconCls="icon-add" plain="true">添加图片</a>
+                <a href="#" id="spuImgUploadBtn" class="easyui-linkbutton" iconCls="icon-save" plain="true">图片上传</a>
+                <a href="#" class="easyui-linkbutton" iconCls="icon-remove" plain="true">删除</a>
+            </div>
+        </div>
+
+        <br/><br/>
+        <!----------------销售属性列表---------------------------->
+        <table id="spuSaleAttrDg" class="easyui-datagrid" title="销售属性列表"
+               data-options="singleSelect:true,method:'get',toolbar:'#spuSaleAttrTootbar'"></table>
+
+        <!----------------销售属性列表工具栏----------------------->
+        <div id="spuSaleAttrTootbar" style="padding:5px;height:auto">
+            <div style="margin-bottom:5px">
+                <a href="#" id="spuSaleAttrAddBtn" class="easyui-linkbutton" iconCls="icon-add"
+                   onclick="addSpuSaleAttr()" plain="true">添加销售属性</a>
+                <a href="#" id="spuSaleAttrEditBtn" class="easyui-linkbutton" iconCls="icon-edit" plain="true"
+                   onclick="editSpuSaleAttr()">编辑销售属性</a>
+                <a href="#" class="easyui-linkbutton" iconCls="icon-remove" plain="true">删除</a>
+            </div>
+        </div>
+
+        <div th:include="spuSaleAttrPage"></div>
+
+    </form>
+</div>
+<!----------------弹出框的按钮组----------------------->
+<div id="spuBtns">
+    <a href="#" class="easyui-linkbutton" onclick="saveSpu()">保 存</a>
+    <a href="#" class="easyui-linkbutton" onclick="closeSpu()">关 闭</a>
+</div>
+
+</body>
+</html>
+<script type="text/javascript">
+    function initSpuInfoDlg() {
+        //alert(1);
+        $('#spu_dlg').dialog("open");
+    }
+
+    function addSpuSaleAttr() {
+        //alert(1);
+        initSpuSaleAttrDlg();
+    }
+
+    function initSpuSaleAttrListDatagrid() {
+        $("#spuName").textbox("clear");
+        $("#description").textbox("clear");
+        $('#spuSaleAttrDg').datagrid('loadData', {total: 0, rows: []});
+        $('#spuSaleAttrDg').datagrid({
+            idField: 'saleAttrId',
+            columns: [[
+                {field: 'id', title: 'id', hidden: true},
+                {field: 'saleAttrId', title: '销售属性Id', width: '25%'},
+                {field: 'saleAttrName', title: '销售属性名称', width: '25%'},
+                {field: 'spuSaleAttrValueJson', title: '销售属性值暂存', width: '50%'}
+            ]]
+        });
+
+
+    }
+
+    //当点击保存的时候需要获取到所有数据进行保存 一共有三层数据
+    function saveSpu() {
+        var spuJson = {};
+        //获取到商品名称 和商品描述 三级分类的id
+        var spuName = $("#spuName").val();
+        var description = $("#description").val();
+        var catalog3Id = $("#ctg3ForSpuList").combobox("getValue");
+        spuJson["spuName"] = spuName;
+        spuJson["description"] = description;
+        spuJson["catalog3Id"] = catalog3Id;
+        //获取销售属性名称 销售属性是多个 用到一个方法 getRows返回当前页的所有行。
+        var spuSaleAttrRows = $("#spuSaleAttrDg").datagrid("getRows");
+        for (i = 0; i < spuSaleAttrRows.length; i++) {
+            //alert(spuSaleAttrRows);
+            //一个销售属性里面有多个属性值 所以在这里面还需要遍历一下
+            //把销售属性先封装成json对象 销售属性保存的字段名有   商品id  商品id是保存商品的时候返回id值进行保存
+            //需要封装的字段名有属性id 和属性名字
+            spuJson["spuSaleAttrList[" + i + "].saleAttrId"] = spuSaleAttrRows[i].saleAttrId;
+            spuJson["spuSaleAttrList[" + i + "].saleAttrName"] = spuSaleAttrRows[i].saleAttrName;
+            //在这里面还需要封装对应的属性值的id 一个属性对应多个属性值
+            //获取这一行的销售属性值的暂存
+            var spuSaleAttrValueJson = spuSaleAttrRows[i].spuSaleAttrValueJson.rows;
+            //var spuSaleAttrValueJson = spuSaleAttrRows[i].spuSaleAttrValueJson.rows;
+            //alert(spuSaleAttrValueJson);
+            for (a = 0; a < spuSaleAttrValueJson.length; a++) {
+
+                // alert(spuSaleAttrValueJson[a].saleAttrValueName);
+                spuJson["spuSaleAttrList[" + i + "].spuSaleAttrValueList[" + a + "].saleAttrValueName"] = spuSaleAttrValueJson[a].saleAttrValueName;
+                spuJson["spuSaleAttrList[" + i + "].spuSaleAttrValueList[" + a + "].saleAttrId"] = spuSaleAttrRows[i].saleAttrId;
+
+
+            }
+
+
+        }
+        if (spuName!="" && spuSaleAttrRows!="" && description!="") {
+            $.post("saveSpu", spuJson, function (data) {
+                alert(data);
+            });
+            $("#spu_dlg").dialog("close");
+
+            reloadSpuList();
+        }else{
+            alert("请添加商品");
+        }
+
+
+    }
+
+</script>
