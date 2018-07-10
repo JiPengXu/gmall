@@ -6,7 +6,7 @@ import com.atguigu.gmall.bean.BaseCatalog2;
 import com.atguigu.gmall.bean.BaseCatalog3;
 
 import java.util.List;
-
+//在加 一行注解
 public interface AttrService {
 
     List<BaseCatalog1> getCatalog1();
