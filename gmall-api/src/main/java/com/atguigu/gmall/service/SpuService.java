@@ -1,5 +1,5 @@
 package com.atguigu.gmall.service;
-
+//加了一行注解
 import com.atguigu.gmall.bean.BaseSaleAttr;
 import com.atguigu.gmall.bean.SpuInfo;
 
