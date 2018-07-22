@@ -4,7 +4,7 @@ package com.atguigu.gmall.bean;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.util.List;
-
+//加注解测试
 /**
  * @param
  * @return
